@@ -1,5 +1,5 @@
 --! ============================================================================================================
---! PLATABOOST LIBRARY (CORRIGIDA)
+--! PLATABOOST LIBRARY (CORREÇÃO v2)
 --! ============================================================================================================
 --! json library
 --! cryptography library
@@ -33,7 +33,13 @@ end)
 --!optimize 2
 function cacheLink()
     if cachedTime + (10*60) < fOsTime() then
-        local success, response = pcall(function() return fRequest({ Url = host .. "/public/start", Method = "POST", body = lEncode({ service = service, identifier = lDigest(fGetHwid()) }), Headers = { ["Content-Type"] = "application/json" } }) end)
+        local requestBody = lEncode({ service = service, identifier = lDigest(fGetHwid()) })
+        if not requestBody or requestBody == "" then
+            print("PlatoBoost [Local Error]: Falha ao codificar o JSON para cacheLink.")
+            return false, "JSON Encoding Failed"
+        end
+        
+        local success, response = pcall(function() return fRequest({ Url = host .. "/public/start", Method = "POST", body = requestBody, headers = { ["Content-Type"] = "application/json" } }) end)
         if not success or not response then print("PlatoBoost:", "Failed to send request to cache link."); return false, "Request failed." end
 
         if response.StatusCode == 200 then
@@ -76,7 +82,13 @@ local redeemKey = function(key)
     local bodyTable = { identifier = lDigest(fGetHwid()), key = key }
     if useNonce then bodyTable.nonce = nonce; end
     
-    local success, response = pcall(function() return fRequest({ Url = endpoint, Method = "POST", body = lEncode(bodyTable), Headers = { ["Content-Type"] = "application/json" } }) end)
+    local requestBody = lEncode(bodyTable)
+    if not requestBody or requestBody == "" then
+        print("PlatoBoost [Local Error]: Falha ao codificar o JSON para redeemKey.")
+        return false
+    end
+    
+    local success, response = pcall(function() return fRequest({ Url = endpoint, Method = "POST", body = requestBody, headers = { ["Content-Type"] = "application/json" } }) end)
     if not success or not response then print("PlatoBoost:", "Failed to send request to redeem key."); return false end
 
     if response.StatusCode == 200 then
